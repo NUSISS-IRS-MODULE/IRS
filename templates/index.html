@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Tourism Recommender</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 { text-align: center; }
+
+    /* Flex container for main layout */
+    #content {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    /* Left panel = map + itinerary stacked */
+    #left-panel {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Map styling */
+    #map {
+      width: 100%;
+      height: 300px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    /* Itinerary styling */
+    #itinerary {
+      margin-top: 15px;
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    .day-section { margin-bottom: 20px; }
+    .poi {
+      background: white;
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 6px;
+      border-left: 4px solid #0078ff;
+    }
+    .poi h4 { margin: 0; font-size: 16px; color: #0078ff; }
+    .poi p { margin: 5px 0 0 0; font-size: 14px; }
+    input, button, select { margin: 4px; padding: 6px; }
+
+    /* Right panel = chatbot */
+    #chat-container {
+      width: 50%;
+      height: 80vh;
+      min-height: 500px; 
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      font-size: 14px;
+    }
+    #chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .msg.user { text-align: right; color: blue; margin: 5px 0; }
+    .msg.bot { text-align: left; color: green; margin: 5px 0; }
+    #chat-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+    #chat-input input {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      border-radius: 0 0 0 10px;
+    }
+    #chat-input button {
+      border: none;
+      background: #0078ff;
+      color: white;
+      padding: 10px;
+      border-radius: 0 0 10px 0;
+    }
+
+    /* Responsive design: stack vertically on small screens */
+    @media (max-width: 900px) {
+      #content {
+        flex-direction: column;
+      }
+      #left-panel, #chat-container {
+        width: 100%;
+      }
+      #map {
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart Tourism Recommender</h1>
+
+  <div>
+    <label>City or coords:</label>
+    <input id="city" placeholder="Paris or London">
+    <input id="lat" placeholder="lat">
+    <input id="lon" placeholder="lon">
+    <input id="days" type="number" min="1" value="1" title="Number of days">
+    <button onclick="planTrip()">Plan Trip</button>
+  </div>
+
+  <div id="content">
+    <!-- Left side -->
+    <div id="left-panel">
+      <div id="map"></div>
+      <div id="itinerary">
+        <h3>Itinerary</h3>
+        <div id="results">Enter a city and click “Plan Trip”</div>
+      </div>
+    </div>
+
+    <!-- Right side (chatbot) -->
+    <div id="chat-container">
+      <div id="chat-messages"></div>
+      <div id="chat-input">
+        <input id="chat-text" placeholder="Ask me about trips..." onkeypress="if(event.key==='Enter'){sendMessage();}">
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // =========== MAP CODE ===========
+  const map = L.map('map').setView([48.8566, 2.3522], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  let markers = [];
+  function clearMarkers() { markers.forEach(m => map.removeLayer(m)); markers = []; }
+  const dayColors = ["red","blue","green","orange","violet","grey","black","yellow"];
+
+  function getMarkerIcon(color) {
+    return new L.Icon({
+      iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowSize:[41,41]
+    });
+  }
+
+  function getMapCenter(itinerary) {
+    let allCoords = [];
+    itinerary.forEach(day => {
+      day.plan.forEach(poi => {
+        const [lat, lon] = extractCoords(poi);
+        if(lat && lon) allCoords.push([lat, lon]);
+      });
+    });
+    if(allCoords.length===0) return [48.8566,2.3522];
+    const avgLat=allCoords.reduce((s,c)=>s+c[0],0)/allCoords.length;
+    const avgLon=allCoords.reduce((s,c)=>s+c[1],0)/allCoords.length;
+    return [avgLat,avgLon];
+  }
+
+  // ✅ More robust coordinate extractor
+  function extractCoords(poi) {
+    let lat = null, lon = null;
+
+    if (poi.lat && poi.lon) {
+      lat = parseFloat(poi.lat);
+      lon = parseFloat(poi.lon);
+    } else if (poi.latitude && poi.longitude) {
+      lat = parseFloat(poi.latitude);
+      lon = parseFloat(poi.longitude);
+    } else if (poi.point && poi.point.lat && poi.point.lon) {
+      lat = parseFloat(poi.point.lat);
+      lon = parseFloat(poi.point.lon);
+    } else if (poi.geometry && poi.geometry.coordinates) {
+      lon = parseFloat(poi.geometry.coordinates[0]);
+      lat = parseFloat(poi.geometry.coordinates[1]);
+    }
+
+    return [lat, lon];
+  }
+
+  // =========== ITINERARY RENDERING ===========
+  function renderItinerary(itinerary) {
+    clearMarkers();
+
+    if (itinerary && itinerary.length > 0) {
+      const [cLat, cLon] = getMapCenter(itinerary);
+      map.setView([cLat, cLon], 13);
+    }
+
+    let html = "";
+    itinerary.forEach((day, idx) => {
+      const color = dayColors[idx % dayColors.length];
+      html += `<div class='day-section'><h3 style="color:${color}">Day ${day.day}</h3>`;
+      const latlngs = [];
+      day.plan.forEach(poi => {
+        const [lat, lon] = extractCoords(poi);
+        html += `<div class='poi'><h4>${poi.name}</h4>
+                 <p><b>Time:</b> ${poi.arrival||''} - ${poi.departure||''}</p>
+                 <p>${poi.description||'No description available.'}</p></div>`;
+        if (!lat || !lon) return;
+        const marker = L.marker([lat, lon], { icon: getMarkerIcon(color) })
+                        .addTo(map).bindPopup(`<b>${poi.name}</b>`);
+        markers.push(marker);
+        latlngs.push([lat, lon]);
+      });
+      if (latlngs.length > 1) {
+        const polyline = L.polyline(latlngs, { color: color, weight: 3, opacity: 0.7 })
+                        .addTo(map);
+        markers.push(polyline);
+      }
+      html += `</div>`;
+    });
+
+    document.getElementById("results").innerHTML = html;
+  }
+
+  // =========== BACKEND / CHATBOT ===========
+  async function planTrip() {
+    const city=document.getElementById("city").value;
+    const lat=document.getElementById("lat").value;
+    const lon=document.getElementById("lon").value;
+    const days=document.getElementById("days").value||1;
+    const payload={ city, lat, lon, days };
+
+    document.getElementById("results").innerHTML="<em>Planning your trip... please wait.</em>";
+
+    const res=await fetch("/api/plan",{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
+    if(!res.ok){ document.getElementById("results").innerHTML=`<span style='color:red'>Error: ${res.statusText}</span>`; return; }
+    const data=await res.json();
+
+    if(data.itinerary) renderItinerary(data.itinerary);
+  }
+
+  async function sendMessage() {
+    const text = document.getElementById("chat-text").value.trim();
+    if (!text) return;
+    appendMessage("user", text);
+    document.getElementById("chat-text").value = "";
+
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sender: "web_user", message: text })
+      });
+
+      const data = await res.json();
+      if (data.length === 0) {
+        appendMessage("bot", "No response from bot.");
+      } else {
+        data.forEach(msg => {
+          if (msg.text) appendMessage("bot", msg.text);
+          if ((msg.json_message && msg.json_message.itinerary) || 
+              (msg.custom && msg.custom.itinerary)) {
+              const itinerary = msg.json_message?.itinerary || msg.custom?.itinerary;
+              renderItinerary(itinerary);
+          }
+        });
+      }
+    } catch (err) {
+      appendMessage("bot", "⚠️ Error connecting to chatbot server.");
+    }
+  }
+
+  function appendMessage(sender, text) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "msg " + sender;
+    msgDiv.textContent = text;
+    document.getElementById("chat-messages").appendChild(msgDiv);
+    document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
+  }
+</script>
+</body>
+</html>

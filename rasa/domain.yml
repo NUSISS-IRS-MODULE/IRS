@@ -1,0 +1,108 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - inform
+  - affirm
+  - deny
+  - ask_recommendations
+  - plan_trip
+
+entities:
+  - city
+  - lat
+  - lon
+  - days
+  - budget
+  - interests
+  - start_time
+  - end_time
+  - transport
+
+slots:
+  city:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: city
+
+  lat:
+    type: float
+    mappings:
+      - type: from_entity
+        entity: lat
+
+  lon:
+    type: float
+    mappings:
+      - type: from_entity
+        entity: lon
+
+  days:
+    type: float
+    mappings:
+      - type: from_entity
+        entity: days
+
+  budget:
+    type: float
+    mappings:
+      - type: from_entity
+        entity: budget
+
+  interests:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: interests
+
+  start_time:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: start_time
+
+  end_time:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: end_time
+
+  transport:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: transport
+
+  last_plan:
+    type: any
+    mappings:
+      - type: custom
+
+responses:
+  utter_greet:
+    - text: "Hi — I can help plan your trip. Tell me a destination and budget, e.g. 'Plan a 2-day trip to Paris under $300'."
+  utter_ask_destination:
+    - text: "Which city or coordinates would you like to visit?"
+  utter_ask_dates:
+    - text: "How many days will you stay?"
+  utter_ask_budget:
+    - text: "What's your budget per day (in USD)?"
+  utter_ask_interests:
+    - text: "Any interests? (e.g., Culture, Kids, Nature)"
+  utter_plan_summary:
+    - text: "I planned your trip. Here's a short summary: {summary}. I also saved the full itinerary in a structured form."
+  utter_goodbye:
+    - text: "Safe travels — goodbye!"
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true
+
+actions:
+  - action_plan_trip
+
+regex:
+- name: coordinates
+  pattern: '-?\d+\.\d+,\s*-?\d+\.\d+'

@@ -1,0 +1,44 @@
+[
+  {
+    "tag_name": "entity",
+    "ids_to_tags": {
+      "1": "B-budget",
+      "2": "I-budget",
+      "3": "L-budget",
+      "4": "U-budget",
+      "5": "B-city",
+      "6": "I-city",
+      "7": "L-city",
+      "8": "U-city",
+      "9": "B-day",
+      "10": "I-day",
+      "11": "L-day",
+      "12": "U-day",
+      "13": "B-days",
+      "14": "I-days",
+      "15": "L-days",
+      "16": "U-days",
+      "0": "O"
+    },
+    "tags_to_ids": {
+      "B-budget": 1,
+      "I-budget": 2,
+      "L-budget": 3,
+      "U-budget": 4,
+      "B-city": 5,
+      "I-city": 6,
+      "L-city": 7,
+      "U-city": 8,
+      "B-day": 9,
+      "I-day": 10,
+      "L-day": 11,
+      "U-day": 12,
+      "B-days": 13,
+      "I-days": 14,
+      "L-days": 15,
+      "U-days": 16,
+      "O": 0
+    },
+    "num_tags": 17
+  }
+]

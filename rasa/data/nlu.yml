@@ -1,0 +1,40 @@
+version: "3.1"
+
+nlu:
+- intent: greet
+  examples: |
+    - hey
+    - hello
+    - hi there
+    - good morning
+
+- intent: goodbye
+  examples: |
+    - bye
+    - goodbye
+    - see you
+
+- intent: plan_trip
+  examples: |
+    - Plan a [2](days)-day trip to [Paris](city) under [300](budget) dollars
+    - Plan a [3](days)-day trip to [Tokyo](city) for [500](budget) USD with [kids](interests) activities
+    - I want a [1](days)-day itinerary in [40.7128](lat),[-74.0060](lon) with a [100](budget) budget
+    - Plan a [3](days)-day trip to [Singapore](city), budget [150](budget) per day, interests: [food](interests), [culture](interests)
+    - Show me top attractions for [kids](interests) in [Tokyo](city)
+    - Plan a [2](days)-day trip to [Paris](city) with a budget of [300](budget) USD, lat:[48.8566](lat), lon:[2.3522](lon)
+    - I want a trip in [Singapore](city) lat:[1.3521](lat) lon:[103.8198](lon)
+    - Plan trip to [Tokyo](city) for [3](days) days at coordinates [35.6762](lat),[139.6503](lon)
+    - Create an itinerary for [5](days) in [London](city) under [700](budget) dollars
+    - Suggest a [4](days)-day trip in [Barcelona](city) with a budget of [400](budget)
+    - Plan a [7](days)-day cultural trip in [Rome](city) with [history](interests) and [art](interests)
+    - I need a [2](days)-day adventure in [Bangkok](city) with a budget of [250](budget)
+    - Organize a [6](days)-day trip to [New York](city), budget [1200](budget), lat:[40.7128](lat), lon:[-74.0060](lon)
+    - Plan a [1](days)-day tour in [Kuala Lumpur](city) with [nature](interests) and [food](interests)
+    - Please create a [10](days)-day trip in [Sydney](city) for [1500](budget) AUD
+
+
+- intent: ask_recommendations
+  examples: |
+    - What should I see in [Paris](city)?
+    - Recommend places in [Rome](city) for [2](days)
+    - Best attractions in [Singapore](city) for families

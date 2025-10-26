@@ -1,0 +1,8 @@
+version: "3.1"
+
+rules:
+- rule: Plan trip when user asks
+  steps:
+  - intent: plan_trip
+  - action: action_plan_trip
+  - action: utter_plan_summary
